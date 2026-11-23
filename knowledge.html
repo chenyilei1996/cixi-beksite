@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库 · 慈溪事业单位备考</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <div class="page-title">📚 知识卡片</div>
+    <div class="page-subtitle">按五大模块整理的高频考点 · 持续完善中</div>
+  </div>
+
+  <div class="kb-tabs" id="kbTabs">
+    <!-- Tab 由 JS 生成 -->
+  </div>
+
+  <div id="kbContent">
+    <!-- 内容由 JS 生成 -->
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderNav("knowledge");
+
+  const tabs = [
+    { id: "politics", label: "🏛️ 政治" },
+    { id: "economy", label: "📈 经济" },
+    { id: "law", label: "⚖️ 法律" },
+    { id: "management", label: "📋 管理与公文" },
+    { id: "culture", label: "🎭 人文科技" },
+  ];
+
+  const tabsEl = document.getElementById("kbTabs");
+  const contentEl = document.getElementById("kbContent");
+
+  function renderTab(activeId) {
+    tabsEl.innerHTML = tabs.map(t =>
+      `<div class="kb-tab ${t.id === activeId ? "active" : ""}" data-id="${t.id}">${t.label}</div>`
+    ).join("");
+    contentEl.innerHTML = KNOWLEDGE
+      .filter(k => k.section === activeId)
+      .map(node => `
+        <div class="kb-node">
+          <h3>${node.title}</h3>
+          ${node.points.map(p => `
+            <div style="margin-bottom:14px;">
+              <div style="font-size:14px;font-weight:600;color:var(--primary);margin-bottom:6px;">${p.title}</div>
+              <div style="font-size:14px;color:var(--neutral-700);line-height:1.8;">${p.content}</div>
+            </div>
+          `).join("")}
+        </div>
+      `).join("") || `<div class="empty-state"><div class="empty-state-icon">📭</div><div>该模块知识卡片建设中，建议先去刷题模块练习</div></div>`;
+
+    tabsEl.querySelectorAll(".kb-tab").forEach(t => {
+      t.addEventListener("click", () => renderTab(t.dataset.id));
+    });
+  }
+
+  renderTab("politics");
+</script>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模拟考试 · 慈溪事业单位备考</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <div class="page-title">🎯 模拟考试</div>
+    <div class="page-subtitle">闭卷 · 限时 120 分钟 · 满分 100 分 · 合格 60 分</div>
+  </div>
+
+  <!-- 开始界面 -->
+  <div id="startView">
+    <div class="card" style="text-align:center;padding:48px 32px;">
+      <div style="font-size:48px;margin-bottom:16px;">📝</div>
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;">综合知识 · 全真模拟</h2>
+      <p class="text-muted" style="margin-bottom:24px;">共 25 题，满分 100 分，限时 120 分钟。<br>系统将自动计时，到时自动交卷。请确保网络畅通。</p>
+      <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
+        <span class="tag tag-blue">单选题 15×4' = 60'</span>
+        <span class="tag tag-amber">多选题 5×6' = 30'</span>
+        <span class="tag tag-gray">判断题 5×2' = 10'</span>
+      </div>
+      <button class="btn btn-primary btn-lg" id="btnStart">开始答题</button>
+      <div class="mt-16" style="font-size:12px;color:var(--neutral-400);">
+        历史最高分：<span id="bestScore">-</span> 分 · 已模拟 <span id="examCount">0</span> 次
+      </div>
+    </div>
+  </div>
+
+  <!-- 答题界面 -->
+  <div id="examView" style="display:none;">
+    <div class="exam-header">
+      <div class="container exam-header-inner">
+        <div class="timer" id="timer">120:00</div>
+        <div class="q-nav" id="qNav"></div>
+        <button class="btn btn-primary btn-sm" id="btnSubmit">交卷</button>
+      </div>
+    </div>
+
+    <div id="qArea" style="padding-top:16px;">
+      <!-- 题目由 JS 注入 -->
+    </div>
+
+    <div class="flex gap-12 mt-24" style="justify-content:space-between;">
+      <button class="btn btn-outline" id="btnPrev">← 上一题</button>
+      <button class="btn btn-outline btn-sm" id="btnMark">📍 标记本题</button>
+      <button class="btn btn-primary" id="btnNext">下一题 →</button>
+    </div>
+  </div>
+
+  <!-- 结果界面 -->
+  <div id="resultView" style="display:none;">
+    <div class="result-card">
+      <div class="score-circle">
+        <svg width="180" height="180">
+          <circle cx="90" cy="90" r="80" stroke="#e2e8f0" stroke-width="12" fill="none"/>
+          <circle id="scoreArc" cx="90" cy="90" r="80" stroke="#3b6cf6" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="502.65" stroke-dashoffset="502.65"/>
+        </svg>
+        <div style="text-align:center;">
+          <div class="score-num" id="scoreNum">0</div>
+          <div class="score-unit">满分 100</div>
+        </div>
+      </div>
+      <div class="result-title" id="resultTitle">—</div>
+      <div class="result-sub" id="resultSub">—</div>
+      <div style="display:flex;justify-content:center;gap:16px;margin-top:24px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnRetry">🔄 再来一套</button>
+        <button class="btn btn-outline" id="btnReview">📋 查看解析</button>
+      </div>
+    </div>
+
+    <!-- 解析区 -->
+    <div id="reviewArea" style="display:none;margin-top:32px;">
+      <div class="section-header">
+        <div class="section-title">题目解析</div>
+        <button class="btn btn-outline btn-sm" id="btnRevealAll">显示/隐藏所有解析</button>
+      </div>
+      <div id="reviewList"></div>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderNav("exam");
+
+  const startView = document.getElementById("startView");
+  const examView = document.getElementById("examView");
+  const resultView = document.getElementById("resultView");
+  const qArea = document.getElementById("qArea");
+  const qNav = document.getElementById("qNav");
+  const timerEl = document.getElementById("timer");
+  const btnStart = document.getElementById("btnStart");
+  const btnSubmit = document.getElementById("btnSubmit");
+  const btnPrev = document.getElementById("btnPrev");
+  const btnNext = document.getElementById("btnNext");
+  const btnMark = document.getElementById("btnMark");
+
+  let examQs = [];   // 本题单
+  let scores = [];   // 每题分值
+  let curIdx = 0;
+  let answers = {};  // qid -> idx/[]
+  let marked = {};   // qid -> bool
+  let showAllExplain = false;
+  let timeLeft = 120 * 60;
+  let timerHandle = null;
+  let submited = false;
+
+  /* ========== 开始 ========== */
+  const prog = getProgress();
+  document.getElementById("bestScore").textContent = prog.bestScore;
+  document.getElementById("examCount").textContent = prog.examCount;
+
+  btnStart.addEventListener("click", startExam);
+
+  function buildExam() {
+    const pool = {
+      single: QUESTIONS.filter(q => q.type === "single"),
+      multi: QUESTIONS.filter(q => q.type === "multi"),
+      judge: QUESTIONS.filter(q => q.type === "judge"),
+    };
+    // 目标：15 单选 + 5 多选 + 5 判断 = 25 题，满分 100
+    const singles = shuffle(pool.single).slice(0, 15);
+    const multis = shuffle(pool.multi).slice(0, 5);
+    const judges = shuffle(pool.judge).slice(0, 5);
+    const qs = [...singles, ...multis, ...judges];
+    const sc = [...singles.map(() => 4), ...multis.map(() => 6), ...judges.map(() => 2)];
+    return { qs, sc };
+  }
+
+  function startExam() {
+    const { qs, sc } = buildExam();
+    examQs = qs; scores = sc; curIdx = 0;
+    answers = {}; marked = {}; submited = false;
+    timeLeft = 120 * 60;
+
+    startView.style.display = "none";
+    resultView.style.display = "none";
+    examView.style.display = "block";
+    renderTimer();
+    startTimer();
+    renderQNav();
+    renderQuestion();
+  }
+
+  function renderTimer() {
+    const m = Math.floor(timeLeft / 60);
+    const s = timeLeft % 60;
+    const t = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    timerEl.textContent = t;
+    timerEl.classList.remove("warning", "danger");
+    if (timeLeft <= 300) timerEl.classList.add("danger");
+    else if (timeLeft <= 600) timerEl.classList.add("warning");
+  }
+
+  function startTimer() {
+    timerHandle = setInterval(() => {
+      timeLeft--;
+      renderTimer();
+      if (timeLeft <= 0) {
+        clearInterval(timerHandle);
+        alert("时间到，系统自动交卷");
+        finishExam();
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
+  }
+
+  /* ========== 题目导航 ========== */
+  function renderQNav() {
+    const q = examQs[curIdx];
+    if (!q) return;
+    qNav.innerHTML = examQs.map((eq, i) => {
+      let cls = "q-nav-btn";
+      if (i === curIdx) cls += " current";
+      if (answers[eq.id] !== undefined) cls += " answered";
+      if (marked[eq.id]) cls += " marked";
+      return `<button class="${cls}" data-i="${i}">${i + 1}</button>`;
+    }).join("");
+    qNav.querySelectorAll(".q-nav-btn").forEach(b => {
+      b.addEventListener("click", () => { curIdx = parseInt(b.dataset.i); renderQuestion(); });
+    });
+    btnMark.textContent = marked[q.id] ? "📍 已标记" : "📍 标记本题";
+    btnMark.style.opacity = marked[q.id] ? "1" : "0.7";
+  }
+
+  /* ========== 渲染当前题目 ========== */
+  function renderQuestion() {
+    const q = examQs[curIdx];
+    const sel = answers[q.id];
+    const letters = ["A", "B", "C", "D"];
+
+    let optHtml;
+    if (q.type === "multi") {
+      optHtml = q.options.map((opt, i) => {
+        const cls = (Array.isArray(sel) && sel.includes(i)) ? "option selected" : "option";
+        return `<div class="${cls}" data-idx="${i}"><div class="option-key">${letters[i]}</div><div class="option-text">${opt.replace(/^[A-D]\.\s*/, "")}</div></div>`;
+      }).join("");
+    } else {
+      optHtml = q.options.map((opt, i) => {
+        const cls = sel === i ? "option selected" : "option";
+        return `<div class="${cls}" data-idx="${i}"><div class="option-key">${letters[i]}</div><div class="option-text">${opt.replace(/^[A-D]\.\s*/, "")}</div></div>`;
+      }).join("");
+    }
+
+    const typeTag = q.type === "single" ? "单选题" : q.type === "multi" ? "多选题" : "判断题";
+    qArea.innerHTML = `
+      <div class="q-card">
+        <div class="q-meta">
+          <span class="tag tag-blue">${sectionLabel(q.section)}</span>
+          <span class="tag tag-amber">${typeTag} · ${scores[curIdx]} 分</span>
+          <span class="q-type">第 ${curIdx + 1} / ${examQs.length} 题</span>
+        </div>
+        <div class="q-text">${q.text}</div>
+        <div class="options">${optHtml}</div>
+      </div>
+    `;
+
+    qArea.querySelectorAll(".option").forEach(o => {
+      o.addEventListener("click", () => {
+        const idx = parseInt(o.dataset.idx);
+        if (q.type === "multi") {
+          const cur = Array.isArray(answers[q.id]) ? [...answers[q.id]] : [];
+          const p = cur.indexOf(idx);
+          if (p >= 0) cur.splice(p, 1); else cur.push(idx);
+          answers[q.id] = cur.sort((a, b) => a - b);
+        } else {
+          answers[q.id] = idx;
+        }
+        renderQuestion();
+        renderQNav();
+      });
+    });
+
+    renderQNav();
+    btnPrev.disabled = curIdx === 0;
+  }
+
+  btnPrev.addEventListener("click", () => { if (curIdx > 0) { curIdx--; renderQuestion(); } });
+  btnNext.addEventListener("click", () => { if (curIdx < examQs.length - 1) { curIdx++; renderQuestion(); } });
+  btnMark.addEventListener("click", () => {
+    const q = examQs[curIdx];
+    marked[q.id] = !marked[q.id];
+    renderQuestion();
+  });
+
+  btnSubmit.addEventListener("click", () => {
+    const unanswered = examQs.filter(q => answers[q.id] === undefined).length;
+    if (unanswered > 0) {
+      if (!confirm(`还有 ${unanswered} 道题未作答，确定要交卷吗？`)) return;
+    } else {
+      if (!confirm("确定要交卷吗？交卷后无法修改。")) return;
+    }
+    finishExam();
+  });
+
+  /* ========== 评分 & 结果 ========== */
+  function finishExam() {
+    stopTimer();
+    submited = true;
+
+    let score = 0;
+    let correctCount = 0;
+    let wrongList = [];
+    examQs.forEach((q, i) => {
+      const ua = answers[q.id];
+      const correct = checkAnswer(q, ua);
+      if (correct) {
+        score += scores[i];
+        correctCount++;
+      } else {
+        wrongList.push(q);
+      }
+      // 写入错题本（错题才写）
+      Store.recordAnswer(q.id, ua, correct);
+    });
+
+    Store.recordExam(score, examQs.length, correctCount);
+    Store.checkIn();
+
+    // 切换到结果页
+    examView.style.display = "none";
+    resultView.style.display = "block";
+
+    const pass = score >= EXAM_CONFIG.passScore;
+    const scoreArc = document.getElementById("scoreArc");
+    const circumference = 2 * Math.PI * 80;
+    scoreArc.setAttribute("stroke-dasharray", circumference);
+    scoreArc.setAttribute("stroke-dashoffset", circumference * (1 - score / 100));
+    scoreArc.setAttribute("stroke", pass ? "#10b981" : "#ef4444");
+    scoreArc.style.transition = "stroke-dashoffset 1s ease";
+
+    // 动画填充数字
+    const numEl = document.getElementById("scoreNum");
+    let s = 0;
+    const step = Math.max(1, Math.round(score / 40));
+    const timer2 = setInterval(() => {
+      s += step;
+      if (s >= score) { s = score; clearInterval(timer2); }
+      numEl.textContent = s;
+    }, 20);
+
+    document.getElementById("resultTitle").textContent = pass ? "🎉 恭喜通过！" : "📖 继续加油";
+    document.getElementById("resultTitle").className = "result-title " + (pass ? "pass" : "fail");
+    const totalCorrect = examQs.length - wrongList.length;
+    document.getElementById("resultSub").innerHTML =
+      `答对 <b class="text-success">${totalCorrect}</b> 题，答错 <b class="text-danger">${wrongList.length}</b> 题<br>` +
+      `用时 ${Math.round((120 * 60 - timeLeft) / 60)}  分钟 · 错题已自动入本`;
+
+    // 渲染解析列表
+    document.getElementById("btnRetry").onclick = startExam;
+    document.getElementById("btnReview").onclick = () => {
+      const a = document.getElementById("reviewArea");
+      a.style.display = a.style.display === "none" ? "block" : "none";
+      if (a.style.display === "block") renderReview();
+    };
+    document.getElementById("btnRevealAll").onclick = () => {
+      showAllExplain = !showAllExplain;
+      renderReview();
+    };
+  }
+
+  function renderReview() {
+    const list = document.getElementById("reviewList");
+    list.innerHTML = examQs.map((q, i) => {
+      const ua = answers[q.id];
+      const correct = checkAnswer(q, ua);
+      const ansStr = Array.isArray(q.answer) ? q.answer.map(i => String.fromCharCode(65 + i)).join("、") : String.fromCharCode(65 + q.answer);
+      const uaStr = ua === undefined ? "未作答"
+        : Array.isArray(ua) ? ua.map(i => String.fromCharCode(65 + i)).join("、")
+        : String.fromCharCode(65 + ua);
+
+      const letters = ["A", "B", "C", "D"];
+      let optHtml;
+      if (q.type === "multi") {
+        optHtml = q.options.map((opt, j) => {
+          let cls = "option disabled";
+          if (q.answer.includes(j)) cls += " correct";
+          else if (Array.isArray(ua) && ua.includes(j)) cls += " wrong";
+          return `<div class="${cls}"><div class="option-key">${letters[j]}</div><div class="option-text">${opt.replace(/^[A-D]\.\s*/, "")}</div></div>`;
+        }).join("");
+      } else {
+        optHtml = q.options.map((opt, j) => {
+          let cls = "option disabled";
+          if (j === q.answer) cls += " correct";
+          else if (j === ua) cls += " wrong";
+          return `<div class="${cls}"><div class="option-key">${letters[j]}</div><div class="option-text">${opt.replace(/^[A-D]\.\s*/, "")}</div></div>`;
+        }).join("");
+      }
+
+      return `
+        <div class="q-card" style="${correct ? "" : "border-left:3px solid var(--danger);"}">
+          <div class="q-meta">
+            <span class="tag tag-blue">${sectionLabel(q.section)}</span>
+            <span class="q-type">第 ${i + 1} 题 · ${scores[i]} 分</span>
+            <span class="tag ${correct ? "tag-green" : "tag-red"}" style="margin-left:auto;">${correct ? "✓ 正确" : "✗ 错误"}</span>
+          </div>
+          <div class="q-text">${q.text}</div>
+          <div class="options">${optHtml}</div>
+          <div class="q-explain">
+            <div class="q-explain-title">解析</div>
+            <div style="font-size:13px;margin-bottom:6px;">正确答案：<b>${ansStr}</b> · 你的答案：<b class="${correct ? "text-success" : "text-danger"}">${uaStr}</b></div>
+            <div>${q.explain}</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+</script>
+</body>
+</html>

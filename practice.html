@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>刷题 · 慈溪事业单位备考</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <div class="page-title">📖 章节练习</div>
+    <div class="page-subtitle">按模块专项突破 · 即时反馈 · 错题自动入本</div>
+  </div>
+
+  <!-- 章节列表视图 -->
+  <div id="listView">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">选择章节</div>
+        <div class="flex gap-8">
+          <button class="btn btn-outline btn-sm" id="btnRandom">🎲 综合随机 10 题</button>
+        </div>
+      </div>
+      <div class="chapter-list">
+        ${/* 由 JS 注入 */}
+      </div>
+    </div>
+  </div>
+
+  <!-- 刷题视图 -->
+  <div id="quizView" style="display:none;">
+    <div class="flex-between mb-16">
+      <button class="btn btn-ghost btn-sm" id="btnBack">← 返回章节列表</button>
+      <div class="text-sm text-muted" id="quizProgress">1 / 10</div>
+    </div>
+
+    <div class="q-card" id="qCard">
+      <!-- 题目由 JS 注入 -->
+    </div>
+
+    <div class="flex gap-12" id="quizActions">
+      <button class="btn btn-outline" id="btnPrev">上一题</button>
+      <button class="btn btn-primary" id="btnNext">下一题 →</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderNav("practice");
+
+  const listView = document.getElementById("listView");
+  const quizView = document.getElementById("quizView");
+  const qCard = document.getElementById("qCard");
+  const quizProgress = document.getElementById("quizProgress");
+  const btnPrev = document.getElementById("btnPrev");
+  const btnNext = document.getElementById("btnNext");
+  const btnBack = document.getElementById("btnBack");
+  const btnRandom = document.getElementById("btnRandom");
+
+  let currentQs = [];
+  let currentIdx = 0;
+  let userAnswers = {}; // { [qid]: selectedIdx or [idx...] }
+  let showResult = {}; // { [qid]: bool }
+
+  /* ========== 渲染章节列表 ========== */
+  function renderChapterList() {
+    const p = getProgress();
+    const html = CHAPTERS.map(ch => {
+      const qs = QUESTIONS.filter(q => q.section === ch.id);
+      const sec = p.chapterStats[ch.id];
+      const answered = sec?.total || 0;
+      const correct = sec?.correct || 0;
+      const acc = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+      const pct = qs.length > 0 ? Math.round((answered / qs.length) * 100) : 0;
+      return `
+        <div class="chapter-item" data-section="${ch.id}">
+          <div class="chapter-info">
+            <h4>${ch.icon} ${ch.name}</h4>
+            <p>${ch.desc} · 共 ${qs.length} 题</p>
+          </div>
+          <div class="chapter-progress">
+            <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
+            <div class="text-xs text-muted">已练 ${answered} · 正确率 ${acc}%</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+    const listEl = listView.querySelector(".chapter-list");
+    listEl.innerHTML = html;
+
+    listEl.querySelectorAll(".chapter-item").forEach(el => {
+      el.addEventListener("click", () => startQuiz(el.dataset.section));
+    });
+  }
+
+  /* ========== 开始刷题 ========== */
+  function startQuiz(section) {
+    let qs;
+    if (section === "random") {
+      qs = shuffle(QUESTIONS).slice(0, 10);
+    } else {
+      qs = QUESTIONS.filter(q => q.section === section);
+    }
+    currentQs = qs;
+    currentIdx = 0;
+    userAnswers = {};
+    showResult = {};
+    listView.style.display = "none";
+    quizView.style.display = "block";
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    const q = currentQs[currentIdx];
+    quizProgress.textContent = `${currentIdx + 1} / ${currentQs.length}`;
+
+    const selected = userAnswers[q.id];
+    const answered = showResult[q.id];
+
+    let optHtml;
+    if (q.type === "multi") {
+      optHtml = q.options.map((opt, i) => {
+        let cls = "option";
+        if (answered) {
+          const isCorrect = q.answer.includes(i);
+          const isSelected = Array.isArray(selected) && selected.includes(i);
+          if (isCorrect) cls += " correct";
+          else if (isSelected) cls += " wrong";
+          cls += " disabled";
+        } else if (Array.isArray(selected) && selected.includes(i)) {
+          cls += " selected";
+        }
+        const letter = String.fromCharCode(65 + i);
+        return `<div class="${cls}" data-idx="${i}"><div class="option-key">${letter}</div><div class="option-text">${opt.replace(/^[A-D]\.\s*/, "")}</div></div>`;
+      }).join("");
+    } else {
+      optHtml = q.options.map((opt, i) => {
+        let cls = "option";
+        if (answered) {
+          if (i === q.answer) cls += " correct disabled";
+          else if (i === selected) cls += " wrong disabled";
+        } else if (selected === i) {
+          cls += " selected";
+        }
+        const letter = String.fromCharCode(65 + i);
+        return `<div class="${cls}" data-idx="${i}"><div class="option-key">${letter}</div><div class="option-text">${opt.replace(/^[A-D]\.\s*/, "")}</div></div>`;
+      }).join("");
+    }
+
+    let explainHtml = "";
+    if (answered) {
+      const ua = userAnswers[q.id];
+      const correct = checkAnswer(q, ua);
+      explainHtml = `
+        <div class="q-explain">
+          <div class="q-explain-title">
+            <span class="tag ${correct ? "tag-green" : "tag-red"}">${correct ? "✓ 回答正确" : "✗ 回答错误"}</span>
+            &nbsp;正确答案：${Array.isArray(q.answer) ? q.answer.map(i => String.fromCharCode(65 + i)).join("、") : String.fromCharCode(65 + q.answer)}
+          </div>
+          <div style="margin-top:8px">${q.explain}</div>
+        </div>
+      `;
+    }
+
+    const typeTag = q.type === "single" ? "单选题" : q.type === "multi" ? "多选题" : "判断题";
+
+    qCard.innerHTML = `
+      <div class="q-meta">
+        <span class="tag tag-blue">${sectionLabel(q.section)}</span>
+        <span class="q-type">${typeTag}</span>
+        ${answered ? "" : `<span class="tag tag-amber">点击选项后自动提交</span>`}
+      </div>
+      <div class="q-text">${q.text}</div>
+      <div class="options" data-qid="${q.id}">${optHtml}</div>
+      ${explainHtml}
+    `;
+
+    // 绑定选项点击
+    if (!answered) {
+      const opts = qCard.querySelectorAll(".option");
+      opts.forEach(opt => {
+        opt.addEventListener("click", () => handleSelect(parseInt(opt.dataset.idx)));
+      });
+    }
+
+    btnPrev.style.visibility = currentIdx === 0 ? "hidden" : "visible";
+    const ua = userAnswers[q.id];
+    const hasAnswer = q.type === "multi"
+      ? Array.isArray(ua) && ua.length > 0
+      : ua !== undefined;
+    if (answered) {
+      btnNext.textContent = currentIdx === currentQs.length - 1 ? "完成练习" : "下一题 →";
+      btnNext.disabled = false;
+      btnNext.style.opacity = "1";
+    } else if (hasAnswer) {
+      btnNext.textContent = "提交答案";
+      btnNext.disabled = false;
+      btnNext.style.opacity = "1";
+    } else {
+      btnNext.textContent = "请先选择答案";
+      btnNext.disabled = true;
+      btnNext.style.opacity = "0.5";
+    }
+  }
+
+  function handleSelect(idx) {
+    const q = currentQs[currentIdx];
+    if (showResult[q.id]) return;
+
+    if (q.type === "multi") {
+      const cur = Array.isArray(userAnswers[q.id]) ? [...userAnswers[q.id]] : [];
+      const pos = cur.indexOf(idx);
+      if (pos >= 0) cur.splice(pos, 1); else cur.push(idx);
+      userAnswers[q.id] = cur.sort((a, b) => a - b);
+    } else {
+      userAnswers[q.id] = idx;
+    }
+    renderQuestion();
+  }
+
+  // 提交 / 下一题
+  btnNext.addEventListener("click", () => {
+    const q = currentQs[currentIdx];
+    if (!showResult[q.id]) {
+      // 第一次点击：提交答案
+      const ua = userAnswers[q.id];
+      if (ua === undefined || (Array.isArray(ua) && ua.length === 0)) {
+        alert("请先选择答案");
+        return;
+      }
+      const correct = checkAnswer(q, ua);
+      Store.recordAnswer(q.id, ua, correct);
+      showResult[q.id] = true;
+      Store.checkIn();
+      renderQuestion();
+    } else {
+      // 第二次：下一题
+      if (currentIdx < currentQs.length - 1) {
+        currentIdx++;
+        renderQuestion();
+      } else {
+        // 完成
+        const total = currentQs.length;
+        const correct = currentQs.filter(q => showResult[q.id] && checkAnswer(q, userAnswers[q.id])).length;
+        const wrong = total - correct;
+        const score = Math.round((correct / total) * 100);
+        setTimeout(() => {
+          if (confirm(`练习完成！\n\n正确 ${correct} 题，错误 ${wrong} 题，正确率 ${score}%\n\n点击「确定」返回章节列表`)) {
+            resetQuiz();
+          }
+        }, 300);
+      }
+    }
+  });
+
+  btnPrev.addEventListener("click", () => {
+    if (currentIdx > 0) { currentIdx--; renderQuestion(); }
+  });
+  btnBack.addEventListener("click", resetQuiz);
+  btnRandom.addEventListener("click", () => startQuiz("random"));
+
+  function resetQuiz() {
+    listView.style.display = "block";
+    quizView.style.display = "none";
+    renderChapterList();
+  }
+
+  // 初始化
+  renderChapterList();
+</script>
+</body>
+</html>

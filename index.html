@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>慈溪事业单位备考 · 首页</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!-- 导航壳由 renderNav 注入 -->
+
+<div class="container">
+
+  <!-- Hero + 倒计时 -->
+  <div class="countdown-wrap mt-32" id="countdown"></div>
+
+  <div class="grid-2 mt-24 gap-24">
+    <!-- 考试信息 -->
+    <div class="card">
+      <div class="card-title">考试基本信息</div>
+      <div class="card-sub">慈溪市人力资源和社会保障局 · 2026 年 11 月 16 日发布</div>
+      <div style="height:16px"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;">
+        <div class="flex-between"><span class="text-muted">招聘人数</span><span class="fw-bold">35 名事业编制</span></div>
+        <div class="flex-between"><span class="text-muted">报名时间</span><span>2026.11.18 9:00 — 11.24 16:00</span></div>
+        <div class="flex-between"><span class="text-muted">缴费时间</span><span>2026.12.2 — 12.4</span></div>
+        <div class="flex-between"><span class="text-muted">准考证打印</span><span>2026.12.23 — 12.26 9:15</span></div>
+        <div class="flex-between"><span class="text-muted">笔试</span><span class="text-primary fw-bold">2026.12.26 9:00</span></div>
+        <div class="flex-between"><span class="text-muted">笔试内容</span><span>综合知识（闭卷）</span></div>
+        <div class="flex-between"><span class="text-muted">笔试分值</span><span>满分 100，合格 60</span></div>
+        <div class="flex-between"><span class="text-muted">总成绩</span><span>笔试 50% + 面试 50%</span></div>
+      </div>
+      <div class="mt-16">
+        <a class="tag tag-blue" href="https://bmxt.nbhr.org.cn" target="_blank" rel="noopener">宁波市考试报名系统 →</a>
+      </div>
+    </div>
+
+    <!-- 备考范围 -->
+    <div class="card">
+      <div class="card-title">综合知识 · 备考范围</div>
+      <div class="card-sub">主要测查以下内容的掌握与应用能力</div>
+      <div style="height:16px"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="flex gap-12" style="align-items:flex-start;">
+          <span class="tag tag-blue" style="min-width:56px;text-align:center;">政治</span>
+          <span class="text-sm">习近平新时代中国特色社会主义思想、二十大精神、马哲原理</span>
+        </div>
+        <div class="flex gap-12" style="align-items:flex-start;">
+          <span class="tag tag-blue" style="min-width:56px;text-align:center;">经济</span>
+          <span class="text-sm">市场经济基础、宏观调控、社会主义基本经济制度</span>
+        </div>
+        <div class="flex gap-12" style="align-items:flex-start;">
+          <span class="tag tag-blue" style="min-width:56px;text-align:center;">法律</span>
+          <span class="text-sm">宪法、民法、刑法、行政法基础</span>
+        </div>
+        <div class="flex gap-12" style="align-items:flex-start;">
+          <span class="tag tag-blue" style="min-width:56px;text-align:center;">管理</span>
+          <span class="text-sm">事业单位人事管理、党政机关公文处理</span>
+        </div>
+        <div class="flex gap-12" style="align-items:flex-start;">
+          <span class="tag tag-blue" style="min-width:56px;text-align:center;">人文科技</span>
+          <span class="text-sm">历史、文学、自然科学常识、阅读理解与综合分析能力</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 学习进度 -->
+  <div class="section mt-32">
+    <div class="section-header">
+      <div class="section-title">学习进度</div>
+      <div class="text-sm text-muted" id="lastUpdate">首次启动，加油！</div>
+    </div>
+    <div class="grid-4" id="statsGrid">
+      <!-- 统计卡片由 JS 注入 -->
+    </div>
+  </div>
+
+  <!-- 章节进度 + 快捷入口 -->
+  <div class="grid-2 mt-24 gap-24">
+    <div class="card">
+      <div class="card-title">章节掌握度</div>
+      <div class="card-sub">首次答题后开始累计，持续更新</div>
+      <div style="height:20px"></div>
+      <div id="chapterProgress" style="display:flex;flex-direction:column;gap:14px;">
+        <!-- 章节进度条由 JS 注入 -->
+      </div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg,#f8fafc 0%,#eef2ff 100%);border-color:#e0e7ff;">
+      <div class="card-title" style="font-size:18px;">快速开始</div>
+      <div class="card-sub">建议按顺序完成：知识 → 刷题 → 模考</div>
+      <div style="height:24px"></div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <a class="btn btn-primary btn-block btn-lg" href="exam.html">🎯 开始模拟考试（120 分钟）</a>
+        <a class="btn btn-outline btn-block" href="practice.html">📖 章节练习 · 巩固基础</a>
+        <a class="btn btn-outline btn-block" href="knowledge.html">📚 浏览知识卡片</a>
+        <a class="btn btn-outline btn-block" href="mistakes.html">🔥 进入错题本</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderNav("home");
+  startCountdown(document.getElementById("countdown"));
+
+  // 打卡 + 渲染进度
+  const streak = Store.checkIn();
+  const p = getProgress();
+  const statsEl = document.getElementById("statsGrid");
+  const accuracyColor = p.accuracy >= 80 ? "success" : p.accuracy >= 60 ? "" : "danger";
+  statsEl.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-num">${p.answered} / ${p.total}</div>
+      <div class="stat-label">累计答题</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num ${accuracyColor}">${p.accuracy}%</div>
+      <div class="stat-label">正确率</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num danger">${p.mistakeCount}</div>
+      <div class="stat-label">待攻克错题</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num accent">🔥 ${p.streak}</div>
+      <div class="stat-label">连续打卡（天）</div>
+    </div>
+  `;
+
+  // 章节进度
+  const cp = document.getElementById("chapterProgress");
+  cp.innerHTML = CHAPTERS.map(ch => {
+    const qs = QUESTIONS.filter(q => q.section === ch.id);
+    const sec = p.chapterStats[ch.id];
+    const answered = sec?.total || 0;
+    const correct = sec?.correct || 0;
+    const pct = qs.length > 0 ? Math.round((answered / qs.length) * 100) : 0;
+    const acc = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+    const color = acc >= 80 ? "green" : acc >= 60 ? "" : "amber";
+    return `
+      <div>
+        <div class="flex-between" style="margin-bottom:6px;">
+          <div class="flex gap-8" style="align-items:center;">
+            <span>${ch.icon}</span>
+            <span class="fw-600" style="font-size:14px;">${ch.name}</span>
+          </div>
+          <span class="text-xs text-muted">${answered}/${qs.length} · 正确率 ${acc}%</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar ${color}" style="width:${pct}%"></div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // 最近模考
+  if (p.examCount > 0) {
+    const exam = Store.load().exams;
+    const last = exam[exam.length - 1];
+    const date = new Date(last.time).toLocaleString("zh-CN", { hour12: false });
+    console.log("最近一次模拟考试：", last.score, "分，", date);
+  }
+</script>
+</body>
+</html>

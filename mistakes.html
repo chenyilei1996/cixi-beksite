@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>错题本 · 慈溪事业单位备考</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+  <div class="page-header">
+    <div class="page-title">🔥 错题本</div>
+    <div class="page-subtitle">答错一次即自动收录，答对一次自动清除</div>
+  </div>
+
+  <div id="mistakeWrap">
+    <div class="mistake-filter" id="filterBar">
+      <button class="btn btn-outline btn-sm active" data-sec="all">全部</button>
+      <button class="btn btn-ghost btn-sm" id="btnRefresh" style="margin-left:auto;">🔄 刷新</button>
+    </div>
+
+    <div id="mistakeList"></div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  renderNav("mistakes");
+
+  let currentSec = "all";
+
+  function loadMistakes() {
+    const data = Store.load();
+    const qids = Object.keys(data.mistakes);
+    let list = qids.map(qid => ({
+      q: QUESTIONS.find(q => q.id === qid),
+      count: data.mistakes[qid],
+    })).filter(x => x.q);
+
+    if (currentSec !== "all") {
+      list = list.filter(x => x.q.section === currentSec);
+    }
+    list.sort((a, b) => b.count - a.count);
+    return list;
+  }
+
+  function render() {
+    const list = loadMistakes();
+    const wrap = document.getElementById("mistakeList");
+
+    if (list.length === 0) {
+      wrap.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🎉</div>
+          <div style="margin-bottom:8px;">太棒了！该分类下没有错题</div>
+          <a class="btn btn-outline" href="practice.html">去刷题</a>
+        </div>
+      `;
+      return;
+    }
+
+    wrap.innerHTML = list.map((item, i) => {
+      const q = item.q;
+      const typeTag = q.type === "single" ? "单选" : q.type === "multi" ? "多选" : "判断";
+      return `
+        <div class="q-card" data-qid="${q.id}">
+          <div class="q-meta">
+            <span class="tag tag-blue">${sectionLabel(q.section)}</span>
+            <span class="tag tag-amber">${typeTag}</span>
+            <span class="tag tag-red" style="margin-left:auto;">错 ${item.count} 次</span>
+          </div>
+          <div class="q-text">${i + 1}. ${q.text}</div>
+          <div class="options">
+            ${q.options.map((opt, j) => {
+              const letters = ["A", "B", "C", "D"];
+              const isCorrect = Array.isArray(q.answer) ? q.answer.includes(j) : j === q.answer;
+              return `<div class="option disabled ${isCorrect ? "correct" : ""}">
+                <div class="option-key">${letters[j]}</div>
+                <div class="option-text">${opt.replace(/^[A-D]\.\s*/, "")}</div>
+              </div>`;
+            }).join("")}
+          </div>
+          <div class="q-explain" style="margin-top:16px;">
+            <div class="q-explain-title">解析</div>
+            <div>${q.explain}</div>
+          </div>
+          <div class="flex gap-8 mt-16" style="justify-content:flex-end;">
+            <button class="btn btn-outline btn-sm" data-action="retry">↻ 重新做这道</button>
+            <button class="btn btn-ghost btn-sm text-danger" data-action="clear">清除记录</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // 绑定按钮
+    wrap.querySelectorAll("[data-action='retry']").forEach(btn => {
+      btn.addEventListener("click", e => {
+        const card = e.target.closest(".q-card");
+        const qid = card.dataset.qid;
+        const q = QUESTIONS.find(q => q.id === qid);
+        const ua = prompt("输入你的答案（单选填字母如 B；多选用逗号分隔如 A,C）", "");
+        if (ua === null) return;
+        let parsed;
+        if (q.type === "multi") {
+          parsed = ua.split(",").map(s => s.trim().toUpperCase().charCodeAt(0) - 65).filter(n => n >= 0 && n < 4);
+          parsed = [...new Set(parsed)].sort((a, b) => a - b);
+        } else {
+          parsed = ua.trim().toUpperCase().charCodeAt(0) - 65;
+          if (parsed < 0 || parsed > 3) { alert("格式不对哦"); return; }
+        }
+        const correct = checkAnswer(q, parsed);
+        Store.recordAnswer(qid, parsed, correct);
+        alert(correct ? "✓ 答对了！这道题已从错题本移除" : "✗ 还是错了，继续加油！");
+        render();
+      });
+    });
+
+    wrap.querySelectorAll("[data-action='clear']").forEach(btn => {
+      btn.addEventListener("click", e => {
+        const card = e.target.closest(".q-card");
+        const qid = card.dataset.qid;
+        const data = Store.load();
+        delete data.mistakes[qid];
+        Store.save(data);
+        render();
+      });
+    });
+  }
+
+  // 初始化章节筛选按钮
+  (function initFilter() {
+    const bar = document.getElementById("filterBar");
+    const btnRefresh = document.getElementById("btnRefresh");
+    const sectionBtns = CHAPTERS.map(c =>
+      `<button class="btn btn-outline btn-sm" data-sec="${c.id}">${c.icon} ${c.name}</button>`
+    ).join("");
+    // 在 btnRefresh 之前插入章节按钮
+    btnRefresh.insertAdjacentHTML("beforebegin", sectionBtns);
+  })();
+
+  // 筛选按钮
+  document.querySelectorAll(".mistake-filter button[data-sec]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".mistake-filter button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentSec = btn.dataset.sec;
+      render();
+    });
+  });
+  document.getElementById("btnRefresh").addEventListener("click", render);
+
+  render();
+</script>
+</body>
+</html>
