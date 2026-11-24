@@ -245,7 +245,7 @@ function checkAnswer(q, userAnswer) {
 
 /* ========== 章节中文名 ========== */
 function sectionLabel(key) {
-  return { politics: "政治", economy: "经济", law: "法律", management: "管理与公文", culture: "人文科技" }[key] || key;
+  return { politics: "政治", economy: "经济", law: "法律", management: "管理与公文", culture: "人文科技", finance: "财务管理" }[key] || key;
 }
 
 /* ========== 随机洗牌 ========== */
