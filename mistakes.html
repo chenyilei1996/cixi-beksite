@@ -2,30 +2,30 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>错题本 · 慈溪事业单位备考</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=20261124d">
 </head>
 <body>
 
 <div class="container">
   <div class="page-header">
-    <div class="page-title">🔥 错题本</div>
+    <div class="page-title">错题本</div>
     <div class="page-subtitle">答错一次即自动收录，答对一次自动清除</div>
   </div>
 
   <div id="mistakeWrap">
     <div class="mistake-filter" id="filterBar">
       <button class="btn btn-outline btn-sm active" data-sec="all">全部</button>
-      <button class="btn btn-ghost btn-sm" id="btnRefresh" style="margin-left:auto;">🔄 刷新</button>
+      <button class="btn btn-ghost btn-sm" id="btnRefresh" style="margin-left:auto;">刷新</button>
     </div>
 
     <div id="mistakeList"></div>
   </div>
 </div>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script src="data.js?v=20261125"></script>
+<script src="app.js?v=20261124"></script>
 <script>
   renderNav("mistakes");
 
@@ -53,7 +53,7 @@
     if (list.length === 0) {
       wrap.innerHTML = `
         <div class="empty-state">
-          <div class="empty-state-icon">🎉</div>
+          <div class="empty-state-icon">✓</div>
           <div style="margin-bottom:8px;">太棒了！该分类下没有错题</div>
           <a class="btn btn-outline" href="practice.html">去刷题</a>
         </div>

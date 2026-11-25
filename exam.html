@@ -2,23 +2,23 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>模拟考试 · 慈溪事业单位备考</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=20261124d">
 </head>
 <body>
 
 <div class="container">
   <div class="page-header">
-    <div class="page-title">🎯 模拟考试</div>
+    <div class="page-title">模拟考试</div>
     <div class="page-subtitle">闭卷 · 限时 120 分钟 · 满分 100 分 · 合格 60 分</div>
   </div>
 
   <!-- 开始界面 -->
   <div id="startView">
-    <div class="card" style="text-align:center;padding:48px 32px;">
-      <div style="font-size:48px;margin-bottom:16px;">📝</div>
-      <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;">综合知识 · 全真模拟</h2>
+    <div class="card exam-start">
+      <div class="exam-start-mark">100<span>分</span></div>
+      <h2>综合知识 · 全真模拟</h2>
       <p class="text-muted" style="margin-bottom:24px;">共 25 题，满分 100 分，限时 120 分钟。<br>系统将自动计时，到时自动交卷。请确保网络畅通。</p>
       <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
         <span class="tag tag-blue">单选题 15×4' = 60'</span>
@@ -46,9 +46,9 @@
       <!-- 题目由 JS 注入 -->
     </div>
 
-    <div class="flex gap-12 mt-24" style="justify-content:space-between;">
+    <div class="flex gap-12 mt-24 exam-actions" style="justify-content:space-between;">
       <button class="btn btn-outline" id="btnPrev">← 上一题</button>
-      <button class="btn btn-outline btn-sm" id="btnMark">📍 标记本题</button>
+      <button class="btn btn-outline btn-sm" id="btnMark">标记本题</button>
       <button class="btn btn-primary" id="btnNext">下一题 →</button>
     </div>
   </div>
@@ -58,8 +58,8 @@
     <div class="result-card">
       <div class="score-circle">
         <svg width="180" height="180">
-          <circle cx="90" cy="90" r="80" stroke="#e2e8f0" stroke-width="12" fill="none"/>
-          <circle id="scoreArc" cx="90" cy="90" r="80" stroke="#3b6cf6" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="502.65" stroke-dashoffset="502.65"/>
+          <circle cx="90" cy="90" r="80" stroke="var(--line)" stroke-width="12" fill="none"/>
+          <circle id="scoreArc" cx="90" cy="90" r="80" stroke="var(--accent)" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="502.65" stroke-dashoffset="502.65"/>
         </svg>
         <div style="text-align:center;">
           <div class="score-num" id="scoreNum">0</div>
@@ -69,8 +69,8 @@
       <div class="result-title" id="resultTitle">—</div>
       <div class="result-sub" id="resultSub">—</div>
       <div style="display:flex;justify-content:center;gap:16px;margin-top:24px;flex-wrap:wrap;">
-        <button class="btn btn-primary" id="btnRetry">🔄 再来一套</button>
-        <button class="btn btn-outline" id="btnReview">📋 查看解析</button>
+        <button class="btn btn-primary" id="btnRetry">再来一套</button>
+        <button class="btn btn-outline" id="btnReview">查看解析</button>
       </div>
     </div>
 
@@ -85,8 +85,8 @@
   </div>
 </div>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script src="data.js?v=20261125"></script>
+<script src="app.js?v=20261124"></script>
 <script>
   renderNav("exam");
 
@@ -111,6 +111,10 @@
   let timeLeft = 120 * 60;
   let timerHandle = null;
   let submited = false;
+
+  function scrollTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   /* ========== 开始 ========== */
   const prog = getProgress();
@@ -143,6 +147,8 @@
     startView.style.display = "none";
     resultView.style.display = "none";
     examView.style.display = "block";
+    document.body.classList.add("exam-mode");
+    scrollTop();
     renderTimer();
     startTimer();
     renderQNav();
@@ -187,9 +193,11 @@
       return `<button class="${cls}" data-i="${i}">${i + 1}</button>`;
     }).join("");
     qNav.querySelectorAll(".q-nav-btn").forEach(b => {
-      b.addEventListener("click", () => { curIdx = parseInt(b.dataset.i); renderQuestion(); });
+      b.addEventListener("click", () => { curIdx = parseInt(b.dataset.i); renderQuestion(); scrollTop(); });
     });
-    btnMark.textContent = marked[q.id] ? "📍 已标记" : "📍 标记本题";
+    const curBtn = qNav.querySelector(".q-nav-btn.current");
+    if (curBtn) curBtn.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    btnMark.textContent = marked[q.id] ? "已标记" : "标记本题";
     btnMark.style.opacity = marked[q.id] ? "1" : "0.7";
   }
 
@@ -245,8 +253,8 @@
     btnPrev.disabled = curIdx === 0;
   }
 
-  btnPrev.addEventListener("click", () => { if (curIdx > 0) { curIdx--; renderQuestion(); } });
-  btnNext.addEventListener("click", () => { if (curIdx < examQs.length - 1) { curIdx++; renderQuestion(); } });
+  btnPrev.addEventListener("click", () => { if (curIdx > 0) { curIdx--; renderQuestion(); scrollTop(); } });
+  btnNext.addEventListener("click", () => { if (curIdx < examQs.length - 1) { curIdx++; renderQuestion(); scrollTop(); } });
   btnMark.addEventListener("click", () => {
     const q = examQs[curIdx];
     marked[q.id] = !marked[q.id];
@@ -290,13 +298,15 @@
     // 切换到结果页
     examView.style.display = "none";
     resultView.style.display = "block";
+    document.body.classList.remove("exam-mode");
+    scrollTop();
 
     const pass = score >= EXAM_CONFIG.passScore;
     const scoreArc = document.getElementById("scoreArc");
     const circumference = 2 * Math.PI * 80;
     scoreArc.setAttribute("stroke-dasharray", circumference);
     scoreArc.setAttribute("stroke-dashoffset", circumference * (1 - score / 100));
-    scoreArc.setAttribute("stroke", pass ? "#10b981" : "#ef4444");
+    scoreArc.setAttribute("stroke", pass ? "#248a3d" : "#d70015");
     scoreArc.style.transition = "stroke-dashoffset 1s ease";
 
     // 动画填充数字
@@ -309,7 +319,7 @@
       numEl.textContent = s;
     }, 20);
 
-    document.getElementById("resultTitle").textContent = pass ? "🎉 恭喜通过！" : "📖 继续加油";
+    document.getElementById("resultTitle").textContent = pass ? "恭喜通过" : "继续加油";
     document.getElementById("resultTitle").className = "result-title " + (pass ? "pass" : "fail");
     const totalCorrect = examQs.length - wrongList.length;
     document.getElementById("resultSub").innerHTML =
@@ -321,7 +331,10 @@
     document.getElementById("btnReview").onclick = () => {
       const a = document.getElementById("reviewArea");
       a.style.display = a.style.display === "none" ? "block" : "none";
-      if (a.style.display === "block") renderReview();
+      if (a.style.display === "block") {
+        renderReview();
+        setTimeout(() => a.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+      }
     };
     document.getElementById("btnRevealAll").onclick = () => {
       showAllExplain = !showAllExplain;

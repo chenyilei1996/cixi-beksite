@@ -2,11 +2,11 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>慈溪事业单位备考 · 首页</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=20261124d">
 </head>
-<body>
+<body class="has-dock">
 <!-- 导航壳由 renderNav 注入 -->
 
 <div class="container">
@@ -61,6 +61,14 @@
           <span class="tag tag-blue" style="min-width:56px;text-align:center;">人文科技</span>
           <span class="text-sm">历史、文学、自然科学常识、阅读理解与综合分析能力</span>
         </div>
+        <div class="flex gap-12" style="align-items:flex-start;">
+          <span class="tag tag-blue" style="min-width:56px;text-align:center;">会计实务</span>
+          <span class="text-sm">会计基础、企业会计实务、政府会计与事业单位会计</span>
+        </div>
+        <div class="flex gap-12" style="align-items:flex-start;">
+          <span class="tag tag-blue" style="min-width:56px;text-align:center;">财务管理</span>
+          <span class="text-sm">事业单位财务规则、预算收支、中级财务管理</span>
+        </div>
       </div>
     </div>
   </div>
@@ -87,23 +95,28 @@
       </div>
     </div>
 
-    <div class="card" style="background:linear-gradient(135deg,#f8fafc 0%,#eef2ff 100%);border-color:#e0e7ff;">
+    <div class="card quick-start">
       <div class="card-title" style="font-size:18px;">快速开始</div>
       <div class="card-sub">建议按顺序完成：知识 → 刷题 → 模考</div>
       <div style="height:24px"></div>
       <div style="display:flex;flex-direction:column;gap:12px;">
-        <a class="btn btn-primary btn-block btn-lg" href="exam.html">🎯 开始模拟考试（120 分钟）</a>
-        <a class="btn btn-outline btn-block" href="practice.html">📖 章节练习 · 巩固基础</a>
-        <a class="btn btn-outline btn-block" href="knowledge.html">📚 浏览知识卡片</a>
-        <a class="btn btn-outline btn-block" href="mistakes.html">🔥 进入错题本</a>
+        <a class="btn btn-primary btn-block btn-lg" href="exam.html">开始模拟考试（120 分钟）</a>
+        <a class="btn btn-outline btn-block" href="practice.html">章节练习 · 巩固基础</a>
+        <a class="btn btn-outline btn-block" href="knowledge.html">浏览知识卡片</a>
+        <a class="btn btn-outline btn-block" href="mistakes.html">进入错题本</a>
       </div>
     </div>
   </div>
 
 </div>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+<div class="mobile-dock">
+  <a class="btn btn-outline" href="practice.html">章节练习</a>
+  <a class="btn btn-primary" href="exam.html">模拟考试</a>
+</div>
+
+<script src="data.js?v=20261125"></script>
+<script src="app.js?v=20261124"></script>
 <script>
   renderNav("home");
   startCountdown(document.getElementById("countdown"));
@@ -127,7 +140,7 @@
       <div class="stat-label">待攻克错题</div>
     </div>
     <div class="stat-card">
-      <div class="stat-num accent">🔥 ${p.streak}</div>
+      <div class="stat-num accent">${p.streak}</div>
       <div class="stat-label">连续打卡（天）</div>
     </div>
   `;
@@ -146,7 +159,7 @@
       <div>
         <div class="flex-between" style="margin-bottom:6px;">
           <div class="flex gap-8" style="align-items:center;">
-            <span>${ch.icon}</span>
+            <span class="chapter-icon">${ch.icon}</span>
             <span class="fw-600" style="font-size:14px;">${ch.name}</span>
           </div>
           <span class="text-xs text-muted">${answered}/${qs.length} · 正确率 ${acc}%</span>

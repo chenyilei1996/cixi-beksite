@@ -2,16 +2,16 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>知识库 · 慈溪事业单位备考</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=20261124d">
 </head>
 <body>
 
 <div class="container">
   <div class="page-header">
-    <div class="page-title">📚 知识卡片</div>
-    <div class="page-subtitle">按六大模块整理的高频考点 · 持续完善中</div>
+    <div class="page-title">知识卡片</div>
+    <div class="page-subtitle">按七大模块整理的高频考点 · 持续完善中</div>
   </div>
 
   <div class="kb-tabs" id="kbTabs">
@@ -23,18 +23,19 @@
   </div>
 </div>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script src="data.js?v=20261125"></script>
+<script src="app.js?v=20261124"></script>
 <script>
   renderNav("knowledge");
 
   const tabs = [
-    { id: "politics", label: "🏛️ 政治" },
-    { id: "economy", label: "📈 经济" },
-    { id: "law", label: "⚖️ 法律" },
-    { id: "management", label: "📋 管理与公文" },
-    { id: "culture", label: "🎭 人文科技" },
-    { id: "finance", label: "💰 财务管理" },
+    { id: "politics", label: "政治" },
+    { id: "economy", label: "经济" },
+    { id: "law", label: "法律" },
+    { id: "management", label: "管理与公文" },
+    { id: "culture", label: "人文科技" },
+    { id: "accounting", label: "会计实务" },
+    { id: "finance", label: "财务管理" },
   ];
 
   const tabsEl = document.getElementById("kbTabs");
@@ -56,7 +57,7 @@
             </div>
           `).join("")}
         </div>
-      `).join("") || `<div class="empty-state"><div class="empty-state-icon">📭</div><div>该模块知识卡片建设中，建议先去刷题模块练习</div></div>`;
+      `).join("") || `<div class="empty-state"><div class="empty-state-icon">空</div><div>该模块知识卡片建设中，建议先去刷题模块练习</div></div>`;
 
     tabsEl.querySelectorAll(".kb-tab").forEach(t => {
       t.addEventListener("click", () => renderTab(t.dataset.id));

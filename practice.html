@@ -2,15 +2,15 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>刷题 · 慈溪事业单位备考</title>
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=20261124d">
 </head>
 <body>
 
 <div class="container">
   <div class="page-header">
-    <div class="page-title">📖 章节练习</div>
+    <div class="page-title">章节练习</div>
     <div class="page-subtitle">按模块专项突破 · 即时反馈 · 错题自动入本</div>
   </div>
 
@@ -20,7 +20,7 @@
       <div class="section-header">
         <div class="section-title">选择章节</div>
         <div class="flex gap-8">
-          <button class="btn btn-outline btn-sm" id="btnRandom">🎲 综合随机 10 题</button>
+          <button class="btn btn-outline btn-sm" id="btnRandom">综合随机 10 题</button>
         </div>
       </div>
       <div class="chapter-list">
@@ -40,15 +40,15 @@
       <!-- 题目由 JS 注入 -->
     </div>
 
-    <div class="flex gap-12" id="quizActions">
+    <div class="flex gap-12 quiz-actions" id="quizActions">
       <button class="btn btn-outline" id="btnPrev">上一题</button>
       <button class="btn btn-primary" id="btnNext">下一题 →</button>
     </div>
   </div>
 </div>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script src="data.js?v=20261125"></script>
+<script src="app.js?v=20261124"></script>
 <script>
   renderNav("practice");
 
@@ -66,6 +66,15 @@
   let userAnswers = {}; // { [qid]: selectedIdx or [idx...] }
   let showResult = {}; // { [qid]: bool }
 
+  function scrollTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function revealExplain() {
+    const ex = qCard.querySelector(".q-explain");
+    if (ex) ex.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
   /* ========== 渲染章节列表 ========== */
   function renderChapterList() {
     const p = getProgress();
@@ -79,7 +88,7 @@
       return `
         <div class="chapter-item" data-section="${ch.id}">
           <div class="chapter-info">
-            <h4>${ch.icon} ${ch.name}</h4>
+            <h4><span class="chapter-icon">${ch.icon}</span>${ch.name}</h4>
             <p>${ch.desc} · 共 ${qs.length} 题</p>
           </div>
           <div class="chapter-progress">
@@ -111,6 +120,8 @@
     showResult = {};
     listView.style.display = "none";
     quizView.style.display = "block";
+    document.body.classList.add("quiz-mode");
+    scrollTop();
     renderQuestion();
   }
 
@@ -172,7 +183,7 @@
       <div class="q-meta">
         <span class="tag tag-blue">${sectionLabel(q.section)}</span>
         <span class="q-type">${typeTag}</span>
-        ${answered ? "" : `<span class="tag tag-amber">点击选项后自动提交</span>`}
+        ${answered ? "" : `<span class="tag tag-amber">${q.type === "multi" ? "多选 · 选好后提交" : "点击选项自动判题"}</span>`}
       </div>
       <div class="q-text">${q.text}</div>
       <div class="options" data-qid="${q.id}">${optHtml}</div>
@@ -216,32 +227,41 @@
       const pos = cur.indexOf(idx);
       if (pos >= 0) cur.splice(pos, 1); else cur.push(idx);
       userAnswers[q.id] = cur.sort((a, b) => a - b);
-    } else {
-      userAnswers[q.id] = idx;
+      renderQuestion();
+      return;
     }
+
+    // 单选、判断：点选即判题，减少一次点击
+    userAnswers[q.id] = idx;
+    submitCurrent();
+  }
+
+  function submitCurrent() {
+    const q = currentQs[currentIdx];
+    const ua = userAnswers[q.id];
+    if (ua === undefined || (Array.isArray(ua) && ua.length === 0)) return false;
+    const correct = checkAnswer(q, ua);
+    Store.recordAnswer(q.id, ua, correct);
+    showResult[q.id] = true;
+    Store.checkIn();
     renderQuestion();
+    setTimeout(revealExplain, 80);
+    return true;
   }
 
   // 提交 / 下一题
   btnNext.addEventListener("click", () => {
     const q = currentQs[currentIdx];
     if (!showResult[q.id]) {
-      // 第一次点击：提交答案
-      const ua = userAnswers[q.id];
-      if (ua === undefined || (Array.isArray(ua) && ua.length === 0)) {
+      if (!submitCurrent()) {
         alert("请先选择答案");
-        return;
       }
-      const correct = checkAnswer(q, ua);
-      Store.recordAnswer(q.id, ua, correct);
-      showResult[q.id] = true;
-      Store.checkIn();
-      renderQuestion();
     } else {
       // 第二次：下一题
       if (currentIdx < currentQs.length - 1) {
         currentIdx++;
         renderQuestion();
+        scrollTop();
       } else {
         // 完成
         const total = currentQs.length;
@@ -258,7 +278,11 @@
   });
 
   btnPrev.addEventListener("click", () => {
-    if (currentIdx > 0) { currentIdx--; renderQuestion(); }
+    if (currentIdx > 0) {
+      currentIdx--;
+      renderQuestion();
+      scrollTop();
+    }
   });
   btnBack.addEventListener("click", resetQuiz);
   btnRandom.addEventListener("click", () => startQuiz("random"));
@@ -266,6 +290,8 @@
   function resetQuiz() {
     listView.style.display = "block";
     quizView.style.display = "none";
+    document.body.classList.remove("quiz-mode");
+    scrollTop();
     renderChapterList();
   }
 
